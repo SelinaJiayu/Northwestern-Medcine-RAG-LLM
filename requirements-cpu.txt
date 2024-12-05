@@ -1,0 +1,10 @@
+langchain-ollama
+langchain-huggingface
+langchain-core
+langchain_community
+faiss-cpu
+beautifulsoup4
+pandas
+urllib3
+matplotlib
+tqdm

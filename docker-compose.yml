@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:latest
+    container_name: postgres_container
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    # ports:
+    #   - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - ollama_network
+
+  ollama_server:
+    image: ollama/ollama
+    container_name: ollama_server
+    volumes:
+      - ollama:/root/.ollama
+      - ./start_ollama.sh:/start_ollama.sh 
+    # ports:
+    #   - "11435:11434"
+    depends_on:
+      - postgres
+    networks:
+      - ollama_network
+    entrypoint: /start_ollama.sh
+
+  backend:
+    image: cancer_rag_backend:latest
+    container_name: cancer_rag_backend
+    volumes:
+      - ./backend/cancer_QA.db:/home/db/cancer_QA.db
+    depends_on:
+      - ollama_server
+    environment:
+      - OLLAMA_SERVER=http://ollama_server:11434
+      - DATABASE_URI=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - INIT_MODE=${INIT_MODE}
+    ports:
+      - "8000:8000"
+    networks:
+      - ollama_network
+
+  frontend:
+    image: cancer_rag_frontend:latest
+    container_name: cancer_rag_frontend
+    depends_on:
+      - backend
+    environment:
+      - BASE_URL=http://cancer_rag_backend:8000
+      - RETRIEVAL_CHAIN_URL=${RETRIEVAL_CHAIN_URL}
+      - CONVERSATIONAL_CHAIN_URL=${CONVERSATIONAL_CHAIN_URL}
+      - CONTEXT_GRADER_URL=${CONTEXT_GRADER_URL}
+      - SESSION_API_URL=${SESSION_API_URL}
+      - SESSION_CHAT_API_URL=${SESSION_CHAT_API_URL}
+      - CORRECTNESS_EVAL_CHAIN_URL=${CORRECTNESS_EVAL_CHAIN_URL}
+      - RELEVANCE_EVAL_CHAIN_URL=${RELEVANCE_EVAL_CHAIN_URL}
+      - HARMFULNESS_EVAL_CHAIN_URL=${HARMFULNESS_EVAL_CHAIN_URL}
+      - CONCISENESS_EVAL_CHAIN_URL=${CONCISENESS_EVAL_CHAIN_URL}
+      - COHERENCE_EVAL_CHAIN_URL=${COHERENCE_EVAL_CHAIN_URL}
+      - TEST_MODE=${TEST_MODE}
+      - INIT_MODE=${INIT_MODE}
+    ports:
+      - "8520:8520"
+    networks:
+      - ollama_network
+
+volumes:
+  ollama:
+  postgres_data: 
+
+networks:
+  ollama_network:
+    driver: bridge

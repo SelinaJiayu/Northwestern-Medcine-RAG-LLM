@@ -1,0 +1,12 @@
+langchain-ollama
+langchain-huggingface
+langchain-core
+langchain_community
+faiss-gpu
+pandas
+tqdm
+langserve
+uvicorn
+fastapi 
+sse_starlette
+psycopg2-binary
